@@ -8,7 +8,7 @@ using namespace std;
 
 
 
-#define TYPE float
+#define TYPE double
 
 
 void runMultiply(int N, int repeat) {

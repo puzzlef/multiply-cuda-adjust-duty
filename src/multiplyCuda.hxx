@@ -16,9 +16,10 @@ __device__ void multiplyKernelLoop(T *a, T *x, T *y, int N, int i, int DI) {
 
 
 template <class T>
-__global__ void multiplyKernel(T *a, T *x, T* y, int N) {
+__global__ void multiplyKernel(T *a, T *x, T* y, int N, int D) {
   DEFINE(t, b, B, G);
-  multiplyKernelLoop(a, x, y, N, B*b+t, G*B);
+  unusedCuda(G);
+  multiplyKernelLoop(a, x, y, min(N, D*B*(b+1)), D*B*b+t, B);
 }
 
 
@@ -36,7 +37,8 @@ float multiplyCuda(T *a, const T *x, const T *y, int N, const MultiplyOptions& o
   TRY( cudaMemcpy(yD, y, N1, cudaMemcpyHostToDevice) );
 
   float t = measureDuration([&] {
-    multiplyKernel<<<G, B>>>(aD, xD, yD, N);
+    int D = ceilDiv(N, G*B);
+    multiplyKernel<<<G, B>>>(aD, xD, yD, N, D);
     TRY( cudaDeviceSynchronize() );
   }, o.repeat);
   TRY( cudaMemcpy(a, aD, N1, cudaMemcpyDeviceToHost) );
